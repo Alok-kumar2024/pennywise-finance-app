@@ -68,4 +68,22 @@ class PlaidRemoteDataSource {
       throw Exception("Plaid Account Fetch Failed: $e");
     }
   }
+
+  Future<String> exchangePublicToken(String publicToken) async{
+    try{
+      final response = await _dio.post(
+        "${ApiConstants.baseUrl}/item/public_token/exchange",
+        data: {
+          'client_id':ApiConstants.clientID,
+          'secret':ApiConstants.secret,
+          'public_token':publicToken,
+        }
+      );
+
+      return response.data["access_token"];
+    }catch(e)
+    {
+      throw Exception("Plaid Token Exchange Failed: $e");
+    }
+  }
 }

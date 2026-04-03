@@ -24,4 +24,9 @@ class FinanceRepositoryImp implements FinanceRepository {
 
     return accounts;
   }
+
+  @override
+  Future<String> exchangePublicToken(String publicToken) {
+    return remoteDataSource.exchangePublicToken(publicToken);
+  }
 }
