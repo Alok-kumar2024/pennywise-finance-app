@@ -14,6 +14,7 @@ class PlaidLinkNotifier extends AsyncNotifier<String?> {
   }
 
   Future<void> prepareLinkToken() async {
+
     //Tell UI show a spinner (Will replace the previous state..)
     state = const AsyncLoading();
 

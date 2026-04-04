@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/legacy.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:pennywise/src/data/datasources/local_cache_data_source.dart';
 import 'package:pennywise/src/data/datasources/plaid_remote_data_source.dart';
 import 'package:pennywise/src/data/datasources/supabase_auth_data_source.dart';
 import 'package:pennywise/src/data/repositories/auth_repository_imp.dart';
@@ -18,8 +18,10 @@ final plaidDataSourceProvider = Provider((ref) {
 
 final financeRepositoryProvider = Provider((ref) {
   final dataSource = ref.watch(plaidDataSourceProvider);
+  final localCache = ref.watch(localCacheProvider);
+  final supabase = ref.watch(supabaseClientProvider);
 
-  return FinanceRepositoryImp(dataSource);
+  return FinanceRepositoryImp(dataSource, localCache, supabase);
 });
 
 final secureStorageProvider = Provider((ref) {
@@ -31,8 +33,7 @@ final tokenRepositoryProvider = Provider((ref) {
   return TokenRepositoryImp(storage);
 });
 
-
-final plaidTokenCheckProvider = FutureProvider<bool>((ref) async{
+final plaidTokenCheckProvider = FutureProvider<bool>((ref) async {
   final tokenRepo = ref.watch(tokenRepositoryProvider);
   final token = await tokenRepo.getAccessToken();
 
@@ -40,19 +41,18 @@ final plaidTokenCheckProvider = FutureProvider<bool>((ref) async{
 });
 
 //Supabase Cliend Provider
-final supabaseClientProvider = Provider((ref){
+final supabaseClientProvider = Provider((ref) {
   return Supabase.instance.client;
 });
 
-final supabaseAuthDataSourceProvider = Provider((ref)
-{
+final supabaseAuthDataSourceProvider = Provider((ref) {
   final client = ref.watch(supabaseClientProvider);
   return SupabaseAuthDataSource(client);
 });
 
 //Login Status track.
 final authStateProvider = StreamProvider(
-      (ref) => ref.watch(authRepositoryProvider).authStateChanges,
+  (ref) => ref.watch(authRepositoryProvider).authStateChanges,
 );
 
 final authRepositoryProvider = Provider((ref) {
@@ -60,3 +60,8 @@ final authRepositoryProvider = Provider((ref) {
   return AuthRepositoryImp(dataSource);
 });
 
+final localCacheProvider = Provider((ref) {
+  final storage = ref.watch(secureStorageProvider);
+
+  return LocalCacheDataSource(storage);
+});
