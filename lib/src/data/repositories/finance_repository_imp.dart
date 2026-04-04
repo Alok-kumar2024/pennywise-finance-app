@@ -1,8 +1,7 @@
 import 'package:pennywise/src/data/datasources/plaid_remote_data_source.dart';
+import 'package:pennywise/src/domain/entities/account_entity.dart';
 import 'package:pennywise/src/domain/entities/transaction_entity.dart';
 import 'package:pennywise/src/domain/repositories/finance_repository.dart';
-
-import '../../domain/entities/account_entity.dart';
 
 class FinanceRepositoryImp implements FinanceRepository {
   final PlaidRemoteDataSource remoteDataSource;
@@ -21,7 +20,6 @@ class FinanceRepositoryImp implements FinanceRepository {
   @override
   Future<List<AccountEntity>> getAccounts(String accessToken) async {
     final accounts = await remoteDataSource.getAccounts(accessToken);
-
     return accounts;
   }
 
