@@ -4,4 +4,10 @@ abstract class TokenRepository {
   Future<String?> getAccessToken();
 
   Future<void> deleteAccessToken();
+
+  Future<void> setPlaidSkipped();
+
+  Future<bool> hasSkippedPlaid();
 }
+
+

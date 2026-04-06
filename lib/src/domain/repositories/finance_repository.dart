@@ -1,4 +1,5 @@
 import 'package:pennywise/src/domain/entities/account_entity.dart';
+import 'package:pennywise/src/domain/entities/goal_entity.dart';
 import 'package:pennywise/src/domain/entities/transaction_entity.dart';
 
 abstract class FinanceRepository {
@@ -21,4 +22,13 @@ abstract class FinanceRepository {
   Future<void> addManualAccount(AccountEntity account);
 
   Future<List<AccountEntity>> getManualAccounts();
+
+  Future<void> deleteManualTransaction(String transactionId);
+
+  Future<void> addGoal(GoalEntity goal);
+
+  Future<List<GoalEntity>> getGoals();
+
+  Future<void> deleteGoal(String goalId);
+
 }
