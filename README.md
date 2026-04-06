@@ -12,26 +12,24 @@ PennyWise is a premium personal finance management application built with Flutte
 
 ## ✨ Key Features
 
-### 🏦 Seamless Banking Integration
-- **Real-time Synchronization**: Connect to thousands of financial institutions securely via **Plaid**.
-- **Automated Categorization**: Transactions are automatically sorted into primary and secondary categories for granular tracking.
-- **Account Aggregation**: View all your balances and history in one unified dashboard.
+### 🏦 Banking Integration (Plaid)
+- **Live Data Fetching**: Securely connect to financial institutions via **Plaid** to fetch balances and transactions.
+- **Automated Categorization**: Transactions are automatically sorted into primary categories for simplified tracking.
+- **Centralized Wallet View**: View all your linked account balances and historical data in one unified dashboard.
 
-### 📊 Deep Spending Insights
-- **Dynamic Analytics**: Visualized spending breakdowns using interactive charts.
-- **Trend Analysis**: Monitor week-over-week spending patterns with automated trend indicators.
-- **Smart Detection**: Instantly identify your highest spending areas and most frequent merchants.
-- **Compact Visualization**: Elegantly formatted financial data designed for clarity and precision.
+### 📊 Financial Insights
+- **Spending Analytics**: Interactive visualized spending breakdowns using the **FL Chart** library.
+- **Trend Tracking**: Automated week-over-week spending comparisons and trend indicators.
+- **Top Spend Detection**: Identify your highest spending category and most frequent merchants at a glance.
+- **Compact UI**: Elegantly formatted financial figures optimized for readability.
 
-### 🔥 Gamified Goals & Habits
-- **No-Spend Challenges**: Build and maintain "hot streaks" by avoiding unnecessary expenses, visualized with interactive animations.
-- **Budget Tracking**: Set monthly limits for specific categories and monitor progress in real-time.
-- **Smart Notifications**: Stay informed when you're approaching or exceeding your budget limits.
+### 🔥 Goals & Gamification
+- **No-Spend Challenge**: Build and track a "hot streak" by avoiding expense logging, visualized with dynamic animations.
+- **Budget Management**: Set and monitor monthly budget goals for specific categories with real-time progress bars.
 
-### 🛡️ Security & Experience
-- **Biometric Ready**: Foundation for secure access using best-in-class local storage.
-- **Premium Aesthetics**: Smooth micro-animations powered by `animate_do` and a professional, modern design system.
-- **Single Sign-On**: Quick and secure onboarding with Google Sign-In and Supabase Auth.
+### 🎨 Premium Experience
+- **Modern Aesthetics**: A curated dark/light theme system with smooth micro-animations powered by **Animate Do**.
+- **Secure Onboarding**: Quick and reliable authentication using **Supabase** and **Google Sign-In**.
 
 ---
 
