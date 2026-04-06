@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:pennywise/src/core/constants/api_constants.dart';
 import 'package:pennywise/src/data/models/account_model.dart';
 import 'package:pennywise/src/data/models/transaction_model.dart';
@@ -31,18 +32,26 @@ class PlaidRemoteDataSource {
 
   Future<List<TransactionModel>> getTransactions(String accessToken) async {
     try {
+      final now = DateTime.now();
+      final thirtyDaysAgo = now.subtract(const Duration(days: 30));
+
       final response = await _dio.post(
         '${ApiConstants.baseUrl}/transactions/get',
         data: {
           'client_id': ApiConstants.clientID,
           'secret': ApiConstants.secret,
           'access_token': accessToken,
-          'start_date': '2026-01-01',
-          'end_date': '2026-04-03',
+          'start_date': thirtyDaysAgo.toIso8601String().substring(0, 10),
+          'end_date': now.toIso8601String().substring(0, 10),
         },
       );
 
       final List rawTransactions = response.data['transactions'];
+
+      if (rawTransactions.isNotEmpty) {
+        debugPrint("🚨 PLAID RAW JSON SAMPLE: ${rawTransactions.first}");
+      }
+
       return rawTransactions
           .map((json) => TransactionModel.fromJson(json))
           .toList();
@@ -54,7 +63,7 @@ class PlaidRemoteDataSource {
   Future<List<AccountModel>> getAccounts(String accesstoken) async {
     try {
       final response = await _dio.post(
-        "${ApiConstants.baseUrl}/accounts/balance/get",
+        "${ApiConstants.baseUrl}/accounts/get",
         data: {
           'client_id': ApiConstants.clientID,
           'secret': ApiConstants.secret,
@@ -64,25 +73,28 @@ class PlaidRemoteDataSource {
 
       final List rawAccounts = response.data['accounts'];
       return rawAccounts.map((json) => AccountModel.fromJson(json)).toList();
+    } on DioException catch (e) {
+      debugPrint("🚨 PLAID DIO ERROR: ${e.response?.data}");
+      throw Exception("Plaid Account Fetch Failed: $e");
     } catch (e) {
+      debugPrint("🚨 PLAID CRASH ERROR: $e");
       throw Exception("Plaid Account Fetch Failed: $e");
     }
   }
 
-  Future<String> exchangePublicToken(String publicToken) async{
-    try{
+  Future<String> exchangePublicToken(String publicToken) async {
+    try {
       final response = await _dio.post(
         "${ApiConstants.baseUrl}/item/public_token/exchange",
         data: {
-          'client_id':ApiConstants.clientID,
-          'secret':ApiConstants.secret,
-          'public_token':publicToken,
-        }
+          'client_id': ApiConstants.clientID,
+          'secret': ApiConstants.secret,
+          'public_token': publicToken,
+        },
       );
 
       return response.data["access_token"];
-    }catch(e)
-    {
+    } catch (e) {
       throw Exception("Plaid Token Exchange Failed: $e");
     }
   }

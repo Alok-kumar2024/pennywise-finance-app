@@ -6,7 +6,6 @@ import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:pennywise/src/core/provider/providers.dart';
 import 'package:pennywise/src/core/utils/ui_helpers.dart';
 import 'package:pennywise/src/presentations/providers/plaid_provider.dart';
-import 'package:pennywise/src/presentations/providers/theme_provider.dart';
 import 'package:pennywise/src/presentations/screens/auth/signup_screen.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -20,6 +19,128 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
+
+  void _showForgotPasswordSheet(BuildContext context) {
+    final emailController = TextEditingController(text: _emailController.text);
+    bool sheetLoading = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setSheetState) {
+          return Container(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(32),
+              ),
+            ),
+            padding: EdgeInsets.only(
+              top: 32,
+              left: 24,
+              right: 24,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onSurface.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  "Reset Password",
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  "Enter your account email. We will send you a secure link to generate a brand new password.",
+                  style: TextStyle(
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withOpacity(0.5),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: emailController,
+                  decoration: InputDecoration(
+                    hintText: "Email address",
+                    filled: true,
+                    fillColor: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 56),
+                    backgroundColor: Theme.of(context).colorScheme.primary,
+                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                  onPressed: sheetLoading
+                      ? null
+                      : () async {
+                          if (emailController.text.isEmpty) return;
+                          setSheetState(() => sheetLoading = true);
+                          try {
+                            await ref
+                                .read(authRepositoryProvider)
+                                .resetPasswordForEmail(emailController.text);
+                            if (ctx.mounted) {
+                              Navigator.pop(ctx);
+                              UIHelpers.showSnackBar(
+                                context,
+                                message:
+                                    "Reset link heavily-secured and sent to ${emailController.text}",
+                              );
+                            }
+                          } catch (e) {
+                            if (ctx.mounted)
+                              UIHelpers.showSnackBar(
+                                context,
+                                message: "Error sending reset link.",
+                                isError: true,
+                              );
+                          } finally {
+                            setSheetState(() => sheetLoading = false);
+                          }
+                        },
+                  child: sheetLoading
+                      ? const SpinKitPulse(color: Colors.white, size: 24)
+                      : const Text(
+                          "SEND RESET LINK",
+                          style: TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Future<void> _handleLogin() async {
     final email = _emailController.text.trim();
@@ -37,7 +158,6 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
     final emailRegex = RegExp(
       r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
     );
-
     if (!emailRegex.hasMatch(email)) {
       UIHelpers.showSnackBar(
         context,
@@ -47,49 +167,33 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-    });
-
+    setState(() => _isLoading = true);
     try {
-      final auth = ref.read(authRepositoryProvider);
-
-      await auth.login(email, password);
-
-      if (mounted) {
-        UIHelpers.showSnackBar(context, message: "Welcome back!");
-      }
+      await ref.read(authRepositoryProvider).login(email, password);
+      if (mounted) UIHelpers.showSnackBar(context, message: "Welcome back!");
     } catch (e) {
       final errorMsg = e.toString().contains('Exception: ')
           ? e.toString().split('Exception: ')[1]
           : "Invalid email or password";
-
-      debugPrint("MESSAGE -> $errorMsg");
-
       UIHelpers.showSnackBar(context, message: errorMsg, isError: true);
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final plaidState = ref.watch(plaidLinkProvider);
-
+    ref.watch(plaidLinkProvider);
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _buildHead(context),
-              SizedBox(height: 30),
+              const SizedBox(height: 30),
               _buildBody(context),
             ],
           ),
@@ -104,21 +208,17 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SizedBox(height: 25),
-          //Logo..
+          const SizedBox(height: 25),
           Container(
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              shape: BoxShape.rectangle,
               color: Theme.of(context).colorScheme.secondary.withOpacity(0.4),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.auto_graph),
+            child: const Icon(Icons.auto_graph),
           ),
-          SizedBox(height: 24),
-
-          //Text..
+          const SizedBox(height: 24),
           FadeInDown(
             duration: const Duration(milliseconds: 400),
             child: RichText(
@@ -139,7 +239,6 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                       color: Theme.of(
                         context,
                       ).colorScheme.onSurface.withOpacity(0.5),
-
                       fontSize: 18,
                       letterSpacing: 0.1,
                     ),
@@ -155,7 +254,7 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
 
   Widget _buildBody(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(left: 5, right: 5, top: 10, bottom: 10),
+      padding: const EdgeInsets.only(left: 5, right: 5, top: 10, bottom: 10),
       child: FadeInUp(
         duration: const Duration(milliseconds: 400),
         child: Column(
@@ -188,9 +287,7 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-
-            SizedBox(height: 20),
-
+            const SizedBox(height: 20),
             _buildLabel(context, "PASSWORD"),
             TextField(
               controller: _passwordController,
@@ -220,14 +317,12 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                 ),
               ),
             ),
-
-            SizedBox(height: 14),
-
+            const SizedBox(height: 14),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () {},
+                  onPressed: () => _showForgotPasswordSheet(context),
                   child: Text(
                     "Forgot password?",
                     style: TextStyle(
@@ -238,15 +333,14 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                 ),
               ],
             ),
-
-            SizedBox(height: 14),
+            const SizedBox(height: 14),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                minimumSize: Size(double.infinity, 56),
+                minimumSize: const Size(double.infinity, 56),
                 backgroundColor: Theme.of(
                   context,
                 ).colorScheme.primary.withOpacity(0.8),
@@ -267,9 +361,7 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                       ),
                     ),
             ),
-
-            SizedBox(height: 40),
-
+            const SizedBox(height: 40),
             Row(
               children: [
                 Expanded(
@@ -278,7 +370,7 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
                     "OR",
                     style: TextStyle(
@@ -289,7 +381,6 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                     ),
                   ),
                 ),
-
                 Expanded(
                   child: Divider(
                     color: Theme.of(context).colorScheme.outlineVariant,
@@ -297,21 +388,26 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                 ),
               ],
             ),
-
-            SizedBox(height: 24),
-
+            const SizedBox(height: 24),
             OutlinedButton(
               style: ElevatedButton.styleFrom(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                minimumSize: Size(double.infinity, 56),
+                minimumSize: const Size(double.infinity, 56),
               ),
-              onPressed: () {
-                UIHelpers.showSnackBar(
-                  context,
-                  message: "Google Sign-In coming soon!",
-                );
+              onPressed: () async {
+                try {
+                  await ref.read(authRepositoryProvider).signInWithGoogle();
+                } catch (e) {
+                  if (context.mounted) {
+                    UIHelpers.showSnackBar(
+                      context,
+                      message: "Error launching Google: $e",
+                      isError: true,
+                    );
+                  }
+                }
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -331,8 +427,7 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                 ],
               ),
             ),
-
-            SizedBox(height: 35),
+            const SizedBox(height: 35),
             RichText(
               text: TextSpan(
                 children: [
@@ -351,12 +446,10 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
                       fontSize: 18,
                     ),
                     recognizer: TapGestureRecognizer()
-                      ..onTap = () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => SignUpScreen()),
-                        );
-                      },
+                      ..onTap = () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                      ),
                   ),
                 ],
               ),
@@ -369,7 +462,7 @@ class _LoginScreen extends ConsumerState<LoginScreen> {
 
   Widget _buildLabel(BuildContext context, String text) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 8, left: 4),
+      padding: const EdgeInsets.only(bottom: 8, left: 4),
       child: Align(
         alignment: Alignment.centerLeft,
         child: Text(

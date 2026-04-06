@@ -15,7 +15,7 @@ class TransactionModel extends TransactionEntity {
   factory TransactionModel.fromJson(Map<String, dynamic> json) {
     return TransactionModel(
       accountId: json["account_id"] ?? "",
-      amount: (json["amount"] as num).toDouble() * -1,
+      amount: (json["amount"] as num).toDouble() ,
       category: List<String>.from(json["category"] ?? []),
       date: json["date"] ?? "",
       name: json["name"] ?? "",
@@ -26,6 +26,7 @@ class TransactionModel extends TransactionEntity {
       ),
     );
   }
+
 }
 
 class PrimaryFinanceModel extends PrimaryFinanceEntity {

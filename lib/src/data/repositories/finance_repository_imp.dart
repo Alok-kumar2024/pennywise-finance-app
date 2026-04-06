@@ -1,9 +1,10 @@
 import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
 import 'package:pennywise/src/data/datasources/local_cache_data_source.dart';
 import 'package:pennywise/src/data/datasources/plaid_remote_data_source.dart';
+import 'package:pennywise/src/data/models/goal_model.dart';
 import 'package:pennywise/src/domain/entities/account_entity.dart';
+import 'package:pennywise/src/domain/entities/goal_entity.dart';
 import 'package:pennywise/src/domain/entities/transaction_entity.dart';
 import 'package:pennywise/src/domain/repositories/finance_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -93,6 +94,17 @@ class FinanceRepositoryImp implements FinanceRepository {
 
     try {
       await _supabase.from("manual_transactions").insert(row);
+
+      final accountData = await _supabase
+          .from("manual_accounts")
+          .select()
+          .eq('id', transaction.accountId)
+          .single();
+      double currentBalance = double.parse(accountData['balance'].toString());
+      await _supabase
+          .from("manual_accounts")
+          .update({'balance': currentBalance - transaction.amount})
+          .eq('id', transaction.accountId);
     } catch (e) {
       await _localCache.addToPendingQueue(jsonEncode(row));
     }
@@ -130,19 +142,88 @@ class FinanceRepositoryImp implements FinanceRepository {
   Future<void> syncOfflineTransactions() async {
     final queue = await _localCache.getPendingQueue();
 
-    if(queue.isEmpty) return;
+    if (queue.isEmpty) return;
 
-    try{
-      for(String jsonItem in queue)
-        {
-          final row = jsonDecode(jsonItem);
-          await _supabase.from('manual_transactions').insert(row);
-        }
+    try {
+      for (String jsonItem in queue) {
+        final row = jsonDecode(jsonItem);
+        await _supabase.from('manual_transactions').insert(row);
+      }
 
       await _localCache.clearPendingQueue();
-    }catch (e)
-    {
+    } catch (e) {
       debugPrint("Upload failed..");
     }
+  }
+
+  @override
+  Future<void> deleteManualTransaction(String transactionId) async {
+    final txData = await _supabase
+        .from('manual_transactions')
+        .select()
+        .eq('id', transactionId)
+        .single();
+
+    // 2. Delete it
+    await _supabase
+        .from('manual_transactions')
+        .delete()
+        .eq('id', transactionId);
+    // 3. Reverse the math on the global wallet!
+    final accountData = await _supabase
+        .from('manual_accounts')
+        .select()
+        .eq('id', txData['account_id'])
+        .single();
+    double currentBalance = double.parse(accountData['balance'].toString());
+    await _supabase
+        .from('manual_accounts')
+        .update({
+          'balance': currentBalance + double.parse(txData['amount'].toString()),
+        })
+        .eq('id', txData['account_id']);
+  }
+
+
+  @override
+  Future<List<GoalEntity>> getGoals() async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return [];
+
+    final response = await _supabase
+        .from('goals')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+
+    // DYNAMIC MAPPER: Converts Supabase JSON into our Entity!
+    // (You will need to import 'goal_model.dart' at the top of the file!)
+    return response.map((json) => GoalModel.fromJson(json)).toList();
+  }
+
+  @override
+  Future<void> addGoal(GoalEntity goal) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) throw Exception("User not logged in");
+
+    // Convert the pure Entity into a Data Model
+    final model = GoalModel(
+      id: goal.id,
+      category: goal.category,
+      amount: goal.amount,
+    );
+
+    // Use the Model to generate the JSON mapping!
+    final data = model.toJson();
+
+    // Inject the secure Auth ID before sending to the cloud
+    data['user_id'] = userId;
+
+    await _supabase.from('goals').insert(data);
+  }
+
+  @override
+  Future<void> deleteGoal(String goalId) async {
+    await _supabase.from('goals').delete().eq('id', goalId);
   }
 }

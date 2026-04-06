@@ -48,4 +48,12 @@ class LocalCacheDataSource {
     await _storage.delete(key: "pending_transactions");
   }
 
+
+  Future<void> clearUserCache() async {
+    await _storage.delete(key: "offline_tx");
+    await _storage.delete(key: "offline_accounts");
+    await _storage.delete(key: "pending_transactions");
+  }
+
+
 }

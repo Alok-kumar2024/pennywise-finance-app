@@ -2,9 +2,10 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:pennywise/src/core/provider/providers.dart';
 import 'package:pennywise/src/core/utils/ui_helpers.dart';
+import 'package:pennywise/src/presentations/navigation/main_layout_screen.dart';
 import 'package:pennywise/src/presentations/providers/plaid_provider.dart';
-import 'package:pennywise/src/presentations/screens/home/home_screen.dart';
 import 'package:plaid_flutter/plaid_flutter.dart';
 
 class PlaidConnectScreen extends ConsumerStatefulWidget {
@@ -28,8 +29,21 @@ class _PlaidConnectScreen extends ConsumerState<PlaidConnectScreen> {
   void _onPlaidSuccess(LinkSuccess event) async {
     await ref.read(plaidLinkProvider.notifier).linkAccount(event.publicToken);
 
+    ref.invalidate(plaidTokenCheckProvider);
+
+    ref.invalidate(accountsProvider);
+    ref.invalidate(transactionProvider);
+
     if (mounted) {
       UIHelpers.showSnackBar(context, message: "Bank Linked SuccessFully!");
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainLayoutScreen()),
+        );
+      }
     }
   }
 
@@ -172,11 +186,19 @@ class _PlaidConnectScreen extends ConsumerState<PlaidConnectScreen> {
               FadeInUp(
                 delay: const Duration(milliseconds: 500),
                 child: TextButton(
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const HomeScreen()),
-                    );
+                  onPressed: () async {
+                    await ref.read(tokenRepositoryProvider).setPlaidSkipped();
+
+                    if (Navigator.canPop(context)) {
+                      Navigator.pop(context);
+                    } else {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MainLayoutScreen(),
+                        ),
+                      );
+                    }
                   },
                   child: Text(
                     "Skip & Add Automatically / Manually",

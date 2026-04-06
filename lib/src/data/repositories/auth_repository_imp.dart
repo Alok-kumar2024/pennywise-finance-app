@@ -16,12 +16,28 @@ class AuthRepositoryImp implements AuthRepository {
   }
 
   @override
-  Future<void> signup(String email, String password) async {
-    await _dataSource.signUpWithEmailPassword(email, password);
+  Future<void> signup(String name, String email, String password) async {
+    await _dataSource.signUpWithEmailPassword(name, email, password);
   }
 
   @override
   Future<void> logout() async {
     await _dataSource.signOut();
   }
+
+  @override
+  Future<void> updatePassword(String password) async {
+    await _dataSource.updatePassword(password);
+  }
+
+  @override
+  Future<void> resetPasswordForEmail(String email) async {
+    await _dataSource.resetPasswordForEmail(email);
+  }
+
+  @override
+  Future<void> signInWithGoogle() async {
+    await _dataSource.signInWithGoogle();
+  }
+
 }

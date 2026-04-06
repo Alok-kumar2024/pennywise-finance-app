@@ -37,7 +37,8 @@ class BalanceModel extends BalanceEntity {
       available: (json["available"] as num?)?.toDouble() ?? 0.0,
       current: (json["current"] as num?)?.toDouble() ?? 0.0,
       isoCurrencyCode: json["iso_currency_code"] ?? "",
-      limit: json["limit"],
+      limit: (json["limit"] as num?)?.toDouble(),
+
     );
   }
 }

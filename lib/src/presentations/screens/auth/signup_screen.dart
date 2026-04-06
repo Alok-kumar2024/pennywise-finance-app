@@ -81,7 +81,7 @@ class _SignUpScreen extends ConsumerState<SignUpScreen> {
     try {
       final auth = ref.read(authRepositoryProvider);
 
-      await auth.signup(email, password);
+      await auth.signup(name, email, password);
 
       if (mounted) {
         UIHelpers.showSnackBar(
@@ -410,11 +410,18 @@ class _SignUpScreen extends ConsumerState<SignUpScreen> {
                 ),
                 minimumSize: Size(double.infinity, 56),
               ),
-              onPressed: () {
-                UIHelpers.showSnackBar(
-                  context,
-                  message: "Google Sign-In coming soon!",
-                );
+              onPressed: () async {
+                try {
+                  await ref.read(authRepositoryProvider).signInWithGoogle();
+                } catch (e) {
+                  if (context.mounted) {
+                    UIHelpers.showSnackBar(
+                      context,
+                      message: "Error launching Google: $e",
+                      isError: true,
+                    );
+                  }
+                }
               },
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
